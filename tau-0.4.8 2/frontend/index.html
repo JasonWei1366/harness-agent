@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tau</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-connection="connecting" data-phase="idle">
+<header>
+  <a class="wordmark" href="./">Tau</a>
+  <div class="identity">
+    <h1 id="session-name">当前会话</h1>
+    <p id="session-facts"></p>
+  </div>
+  <div id="status" class="status" role="status" aria-live="polite">
+    <span class="dot" aria-hidden="true"></span>
+    <span id="status-label">正在连接</span>
+  </div>
+</header>
+<p id="connection-note" class="connection-note" hidden>正在连接服务。</p>
+<div class="workspace">
+<aside id="inspector" class="inspector">
+  <section class="session-switch">
+    <div class="session-row">
+      <h2 id="session-user" class="user-id">用户</h2>
+      <button type="button" id="new-session">新建</button>
+    </div>
+    <div id="session-list" class="session-list" role="listbox" aria-label="历史会话"></div>
+  </section>
+  <section>
+    <h2>用量</h2>
+    <div class="meter" aria-hidden="true"><span id="context-fill"></span></div>
+    <p id="context-usage">正在读取…</p>
+    <p id="token-usage" class="quiet"></p>
+    <p id="activity-usage" class="quiet"></p>
+    <p id="performance-usage" class="quiet"></p>
+  </section>
+  <section>
+    <h2 id="extension-heading">插件</h2>
+    <div id="extensions" class="chips"></div>
+  </section>
+  <section>
+    <h2 id="skill-heading">技能</h2>
+    <div id="skills" class="chips"></div>
+  </section>
+  <section>
+    <h2 id="prompt-heading">提示词</h2>
+    <div id="prompts" class="chips"></div>
+  </section>
+  <section>
+    <h2 id="context-heading">上下文</h2>
+    <div id="context-files" class="chips"></div>
+  </section>
+  <section>
+    <h2 id="system-prompt-heading">系统提示</h2>
+    <div id="system-prompt-files" class="chips"></div>
+  </section>
+  <section>
+    <h2 id="tool-heading">工具</h2>
+    <div id="tools" class="chips"></div>
+  </section>
+</aside>
+<div class="conversation">
+<main id="transcript"></main>
+<form id="composer">
+  <div id="activity" class="activity" hidden>
+    <p id="activity-label">正在开始这一轮</p>
+    <button type="button" id="stop">停止</button>
+  </div>
+  <div class="composer-box">
+    <label class="sr" for="input">给 Tau 的消息</label>
+    <textarea id="input" rows="2" placeholder="描述你想做的事。/ 开头是命令，! 开头是终端命令。"></textarea>
+    <div class="composer-bar">
+      <p id="hint"></p>
+      <p id="error" hidden></p>
+      <button type="submit" id="send">发送</button>
+    </div>
+  </div>
+</form>
+</div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
