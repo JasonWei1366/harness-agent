@@ -1,0 +1,89 @@
+---
+title: "04 — Sessions"
+---
+
+Sessions preserve conversations and agent state across runs.
+
+## Design
+
+Tau uses an append-only session tree. Instead of mutating old state, Tau appends entries and reconstructs state by replaying them.
+
+The low-level implementation lives in:
+
+```text
+src/agent_core/session/
+```
+
+## Entry types
+
+- `message`
+- `model_change`
+- `thinking_level_change`
+- `compaction`
+- `branch_summary`
+- `label`
+- `leaf` (legacy read compatibility only; never written)
+- `session_info`
+- `custom`
+
+## Current capabilities
+
+Tau can now:
+
+- serialize and deserialize session entries as JSONL
+- append entries to local session files
+- read session files in order
+- reconstruct linear session state
+- reconstruct a root-to-leaf branch path
+- load a `application.CodingSession` that restores messages and persists new runs
+
+## Durable message boundary
+
+`CodingSession` treats `MessageEndEvent` as the durable-message boundary. Persistence is push-based: the coding session subscribes a listener to the harness, and every `message_end` notification appends that message to storage before the event reaches the consuming frontend. Persistence does not run in the event consumer, so a frontend that stops consuming (the TUI cancels its worker on Esc) cannot lose writes — including the synthetic "Tool call interrupted by user" results the harness appends and pushes to subscribers during cancelled cleanup.
+
+This mirrors Pi's session model and matters for interactive UIs:
+
+- the first user prompt is branchable while the assistant is still responding
+- queued steering and follow-up messages become durable when they are injected
+- cancellation or process failure preserves completed messages
+- the TUI can read tree state that matches the active run
+
+A message whose `message_end` never fired is deliberately not persisted: abandoning a run before the first completed message leaves no durable trace, so an aborted first prompt does not index a new session.
+
+The active tip is the last non-`leaf` entry in file order. Every new entry points to the current in-memory tip, so an append both records the operation and makes its branch active. Historical `leaf` entries still deserialize but are ignored for tip selection.
+
+Empty sessions are still deferred: loading a new session prepares initial metadata in memory, but Tau does not create the transcript file until the first durable session entry is appended. The first append materializes the pending `session_info`, model, and thinking-level entries before writing the message.
+
+## System prompt persistence
+
+Tau does not currently persist the resolved system prompt in the session JSONL file.
+
+A resumed session restores the saved conversation branch, model changes, thinking-level changes, compactions, branch summaries, labels, and custom entries from the append-only session file. The system prompt is rebuilt at load time from the current coding-agent configuration and resources, including the current cwd, tools, loaded skills, context files such as `AGENTS.md`, and any custom or appended system prompt settings.
+
+This means `/resume` should be understood as:
+
+```text
+saved conversation branch
++
+current resolved system prompt
+```
+
+not:
+
+```text
+saved conversation branch
++
+original system prompt snapshot from session creation
+```
+
+If system-prompt inputs change after a session was created, future turns in that resumed session may run with a different system prompt than earlier turns. This is useful when sessions should pick up improved Tau instructions, updated project context, changed skills, or changed tool guidance. The tradeoff is that the JSONL file is not a complete audit snapshot of exactly what prompt text was sent on every historical turn.
+
+This matches Pi's current behavior. Pi's JSONL session schema stores the conversation tree and session state entries, but it does not store a dedicated resolved-system-prompt entry. Pi rebuilds its base system prompt from the active resource loader when creating or resuming an agent session. Pi can display/export the current runtime system prompt in some UI/export paths, but that prompt comes from live agent state rather than from a persisted JSONL snapshot.
+
+A future Tau enhancement could add an explicit metadata entry for resolved system prompt snapshots or system-prompt revisions. If added, that should likely remain session metadata rather than a normal branchable transcript message, because the harness treats the system prompt separately from user, assistant, and tool messages.
+
+## Boundary
+
+Low-level session primitives belong in `agent_core`. File locations, slash commands, and coding-agent workflows belong in `application`.
+
+`CodingSession` is the first `application` layer on top of the low-level primitives. It wires storage, `AgentHarness`, cwd, and coding tools together while leaving richer commands and resource loading for later phases.

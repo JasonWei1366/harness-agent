@@ -1,0 +1,4 @@
+# Connection for the OpenAI-compatible endpoint.
+# The model name is not set here. Pass it on each HTTP request as "model".
+base_url = "https://api.openai.com/v1"
+api_key = "replace-me"

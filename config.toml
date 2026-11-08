@@ -1,0 +1,4 @@
+# Connection for the OpenAI-compatible endpoint.
+# The model name is not set here. Pass it on each HTTP request as "model".
+base_url = "https://llm-tq3by5z9nh015397.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+api_key = "sk-f01940e1bd784e8f8299d4bffcfb1f89"
