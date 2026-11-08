@@ -5247,6 +5247,10 @@ async def session_for_client(client: ModelProvider, *, model: str) -> CodingSess
     """Start a session that calls an already opened model client.
 
     The caller keeps the client. ``model`` is the name used until a request changes it.
+    The HTTP service has no trust prompt, so the working directory it was started
+    in is trusted for this run. Skills under ``<cwd>/.tau/skills`` then load with
+    the user skills under ``~/.tau/skills``, and extensions under
+    ``<cwd>/.tau/extensions`` load with the user extensions. The decision is not saved.
     """
     manager = SessionManager()
     record = manager.prepare_session(cwd=Path.cwd(), model=model)
@@ -5259,6 +5263,8 @@ async def session_for_client(client: ModelProvider, *, model: str) -> CodingSess
             session_id=record.id,
             session_manager=manager,
             owns_initial_provider=False,
+            trust_override="approve",
+            project_extensions_enabled=True,
         )
     )
 

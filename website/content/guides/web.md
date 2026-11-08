@@ -17,6 +17,8 @@ uv run python -m server.main
 
 That reads `config.toml` and serves `http://127.0.0.1:8765/`. The address and model name are the constants at the top of `src/server/main.py`.
 
+The process trusts the directory it was started in for that run, so `<cwd>/.tau/skills/<name>/SKILL.md` loads together with `~/.tau/skills`, and `<cwd>/.tau/extensions` loads together with `~/.tau/extensions`. The decision is not written to `~/.tau/trust.json`. Restart the server after adding or changing a skill or extension.
+
 - `http://127.0.0.1:8765/docs` is the interactive API reference.
 - `http://127.0.0.1:8765/api/sessions` lists and opens sessions. Every API call is `POST`.
 - `http://127.0.0.1:8765/` is the static client, when `frontend/` is available.

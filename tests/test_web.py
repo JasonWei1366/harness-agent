@@ -78,6 +78,42 @@ async def test_session_for_client_keeps_the_callers_client(
 
 
 @pytest.mark.anyio
+async def test_session_for_client_loads_project_skills(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TAU_HOME", str(tmp_path / "tau-home"))
+    skill_dir = tmp_path / ".tau" / "skills" / "demo"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: demo\ndescription: Demo skill\n---\n\nDo the demo.\n",
+        encoding="utf-8",
+    )
+    session = await session_for_client(FakeProvider([]), model="qwen3.8-max")
+    try:
+        assert [skill.name for skill in session.skills] == ["demo"]
+        assert session.skills[0].path == skill_dir / "SKILL.md"
+    finally:
+        await session.aclose()
+
+
+@pytest.mark.anyio
+async def test_session_for_client_loads_project_extensions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TAU_HOME", str(tmp_path / "tau-home"))
+    extension = tmp_path / ".tau" / "extensions" / "ping_tool.py"
+    extension.parent.mkdir(parents=True)
+    extension.write_text("def setup(tau):\n    return None\n", encoding="utf-8")
+    session = await session_for_client(FakeProvider([]), model="qwen3.8-max")
+    try:
+        assert "ping_tool" in session.extension_names
+    finally:
+        await session.aclose()
+
+
+@pytest.mark.anyio
 async def test_web_api_streams_and_serves_frontend(tmp_path: Path) -> None:
     provider = _PausingProvider()
     session = await CodingSession.load(_session(tmp_path, provider))
